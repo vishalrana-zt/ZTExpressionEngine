@@ -15,7 +15,7 @@ final class Lexer {
 
         if c.isNumber { return readNumber() }
         if c == "'" || c == "\"" { return readString() }
-        if c.isLetter || c.isNumber  { return readIdentifier() }
+        if isIdentifierStart(c)  { return readIdentifier() }
 
         index += 1
 
@@ -77,13 +77,22 @@ final class Lexer {
         index += 1
         return .string(value)
     }
+    
+    private func isIdentifierStart(_ c: Character) -> Bool {
+        c.isLetter || c.isNumber
+    }
+
+    private func isIdentifierChar(_ c: Character) -> Bool {
+        c.isLetter || c.isNumber ||
+        c == ":" || c == "/" || c == "_" ||
+        c == "-" || c == "?"
+    }
 
     private func readIdentifier() -> Token {
         let start = index
         var hasLetter = false
 
-        while index < chars.count &&
-              (chars[index].isLetter || chars[index].isNumber) {
+        while index < chars.count && isIdentifierChar(chars[index]) {
             if chars[index].isLetter {
                 hasLetter = true
             }
@@ -92,7 +101,7 @@ final class Lexer {
 
         let word = String(chars[start..<index])
 
-        // If no letters → it's actually a number
+        // If it's purely numeric, treat as number
         if !hasLetter, let num = Double(word) {
             return .number(num)
         }
