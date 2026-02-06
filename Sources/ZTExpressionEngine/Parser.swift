@@ -1,122 +1,209 @@
+import Foundation
+
 final class Parser {
 
     private let lexer: Lexer
     private var current: Token
 
-    init(_ input: String) {
-        lexer = Lexer(input)
-        current = lexer.nextToken()
+    init(_ input: String) throws {
+        self.lexer = Lexer(input)
+        self.current = lexer.nextToken()
     }
 
+    // MARK: - Entry point
+
     func parse() throws -> ASTNode {
-        try parseTernary()
+        let expr = try parseTernary()
+        try expect(.eof)
+        return expr
     }
+
+    // MARK: - Ternary
 
     private func parseTernary() throws -> ASTNode {
         let condition = try parseOr()
         if current == .question {
             try consume()
-            let t = try parseTernary()
-            try consume(.colon)
-            let f = try parseTernary()
-            return .ternary(condition: condition, trueExpr: t, falseExpr: f)
+            let trueExpr = try parseTernary()
+            try expect(.colon)
+            let falseExpr = try parseTernary()
+            return .ternary(condition: condition, trueExpr: trueExpr, falseExpr: falseExpr)
         }
         return condition
     }
 
+    // MARK: - OR
+
     private func parseOr() throws -> ASTNode {
         var node = try parseAnd()
         while current == .or || current == .logicalOr {
-            let op = current == .logicalOr ? .or : current
-            try consume()
-            node = .binary(op: op, left: node, right: try parseAnd())
-        }
-        return node
-    }
-
-    private func parseAnd() throws -> ASTNode {
-        var node = try parseComparison()
-        while current == .and || current == .logicalAnd {
-            let op = current == .logicalAnd ? .and : current
-            try consume()
-            node = .binary(op: op, left: node, right: try parseComparison())
-        }
-        return node
-    }
-
-    private func parseComparison() throws -> ASTNode {
-        var node = try parseTerm()
-        while current == .in || current == .notIn {
             let op = current
             try consume()
-            node = .binary(op: op, left: node, right: try parseTerm())
+            let right = try parseAnd()
+            node = .binary(op: op, left: node, right: right)
         }
         return node
     }
 
-    private func parseTerm() throws -> ASTNode {
-        var node = try parseFactor()
+    // MARK: - AND
+
+    private func parseAnd() throws -> ASTNode {
+        var node = try parseEquality()
+
+        while current == .and || current == .logicalAnd {
+            let op = current
+            try consume()
+            let right = try parseEquality()
+            node = .binary(op: op, left: node, right: right)
+        }
+
+        return node
+    }
+
+    // MARK: - Equality (== != === !==)
+
+    private func parseEquality() throws -> ASTNode {
+        var node = try parseComparison()
+
+        while current == .equal
+            || current == .notEqual
+            || current == .strictEqual
+            || current == .strictNotEqual {
+
+            let op = current
+            try consume()
+            let right = try parseComparison()
+            node = .binary(op: op, left: node, right: right)
+        }
+
+        return node
+    }
+
+    // MARK: - Comparison (< > <= >= IN NOT IN)
+
+    private func parseComparison() throws -> ASTNode {
+        var node = try parseAdditive()
+
+        while current == .greater
+            || current == .greaterEqual
+            || current == .less
+            || current == .lessEqual
+            || current == .in
+            || current == .notIn {
+
+            let op = current
+            try consume()
+            let right = try parseAdditive()
+            node = .binary(op: op, left: node, right: right)
+        }
+
+        return node
+    }
+
+    // MARK: - Additive (+ -)
+
+    private func parseAdditive() throws -> ASTNode {
+        var node = try parseMultiplicative()
+
         while current == .plus || current == .minus {
             let op = current
             try consume()
-            node = .binary(op: op, left: node, right: try parseFactor())
+            let right = try parseMultiplicative()
+            node = .binary(op: op, left: node, right: right)
         }
         return node
     }
 
-    private func parseFactor() throws -> ASTNode {
+    // MARK: - Multiplicative (* /)
+
+    private func parseMultiplicative() throws -> ASTNode {
         var node = try parseUnary()
+
         while current == .multiply || current == .divide {
             let op = current
             try consume()
-            node = .binary(op: op, left: node, right: try parseUnary())
+            let right = try parseUnary()
+            node = .binary(op: op, left: node, right: right)
         }
         return node
     }
+
+    // MARK: - Unary (! -)
 
     private func parseUnary() throws -> ASTNode {
         if current == .not || current == .minus {
             let op = current
             try consume()
-            return .unary(op: op, expr: try parseUnary())
+            let expr = try parseUnary()
+            return .unary(op: op, expr: expr)
         }
         return try parsePrimary()
     }
 
+    // MARK: - Primary
+
     private func parsePrimary() throws -> ASTNode {
         switch current {
-        case .number(let v): try consume(); return .number(v)
-        case .string(let v): try consume(); return .string(v)
-        case .identifier(let v): try consume(); return .variable(v)
-        case .leftBracket: return try parseList()
+
+        case .number(let v):
+            try consume()
+            return .number(v)
+
+        case .string(let v):
+            try consume()
+            return .string(v)
+
+        case .identifier(let name):
+            try consume()
+            return .variable(name)
+
         case .leftParen:
             try consume()
             let expr = try parseTernary()
-            try consume(.rightParen)
+            try expect(.rightParen)
             return expr
-        case .eof:
-            throw RuleError.unexpectedEOF
+
+        case .leftBracket:
+            return try parseList()
+
         default:
-            throw RuleError.unexpectedToken
+            throw RuleError.unexpectedToken(current)
         }
     }
 
+    // MARK: - List [a, b, c]
+
     private func parseList() throws -> ASTNode {
-        try consume(.leftBracket)
+        try expect(.leftBracket)
         var items: [ASTNode] = []
-        while current != .rightBracket {
-            items.append(try parsePrimary())
-            if current == .comma { try consume() }
+
+        if current != .rightBracket {
+            repeat {
+                let value = try parseTernary()
+                items.append(value)
+
+                if current != .comma {
+                    break
+                }
+                try consume()
+            } while true
         }
-        try consume(.rightBracket)
+
+        try expect(.rightBracket)
         return .list(items)
     }
 
-    private func consume(_ expected: Token? = nil) throws {
-        if let expected = expected, current != expected {
-            throw RuleError.unexpectedToken
-        }
+    // MARK: - Helpers
+
+    private func consume() throws {
         current = lexer.nextToken()
+    }
+
+    private func expect(_ token: Token) throws {
+        guard current == token else {
+            throw RuleError.unexpectedToken(current)
+        }
+        try consume()
     }
 }
 

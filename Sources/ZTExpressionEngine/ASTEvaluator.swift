@@ -55,16 +55,41 @@ public struct ASTEvaluator {
             }
 
             let right = try eval(r, vars: vars)
-
+            
             switch op {
-            case .plus: return try toDouble(left) + toDouble(right)
-            case .minus: return try toDouble(left) - toDouble(right)
-            case .multiply: return try toDouble(left) * toDouble(right)
-            case .divide: return try toDouble(left) / toDouble(right)
-            case .and: return try toBool(left) && toBool(right)
-            case .or: return try toBool(left) || toBool(right)
-            case .equal: return "\(left)" == "\(right)"
-            case .notEqual: return "\(left)" != "\(right)"
+
+            case .plus:
+                return try toDouble(left) + toDouble(right)
+
+            case .minus:
+                return try toDouble(left) - toDouble(right)
+
+            case .multiply:
+                return try toDouble(left) * toDouble(right)
+
+            case .divide:
+                return try toDouble(left) / toDouble(right)
+
+            case .and:
+                return try toBool(left) && toBool(right)
+
+            case .or:
+                return try toBool(left) || toBool(right)
+
+            case .equal:
+                return String(describing: left) == String(describing: right)
+
+            case .notEqual:
+                return String(describing: left) != String(describing: right)
+
+            case .strictEqual:
+                return type(of: left) == type(of: right)
+                    && String(describing: left) == String(describing: right)
+
+            case .strictNotEqual:
+                return !(type(of: left) == type(of: right)
+                    && String(describing: left) == String(describing: right))
+
             default:
                 throw RuleError.invalidOperator("\(op)")
             }
@@ -73,60 +98,6 @@ public struct ASTEvaluator {
             return try toBool(eval(c, vars: vars))
                 ? eval(t, vars: vars)
                 : eval(f, vars: vars)
-        }
-    }
-}
-
-
-// MARK: - AST Debug Printer
-
-extension ASTNode {
-
-    func debugDescription(indent: String = "") -> String {
-        let nextIndent = indent + "  "
-
-        switch self {
-
-        case .number(let v):
-            return "\(indent)Number(\(v))"
-
-        case .string(let v):
-            return "\(indent)String(\"\(v)\")"
-
-        case .variable(let name):
-            return "\(indent)Variable(\(name))"
-
-        case .list(let items):
-            var result = "\(indent)List[\n"
-            for item in items {
-                result += item.debugDescription(indent: nextIndent) + "\n"
-            }
-            result += "\(indent)]"
-            return result
-
-        case .unary(let op, let expr):
-            return """
-            \(indent)Unary(\(op))
-            \(expr.debugDescription(indent: nextIndent))
-            """
-
-        case .binary(let op, let left, let right):
-            return """
-            \(indent)Binary(\(op))
-            \(left.debugDescription(indent: nextIndent))
-            \(right.debugDescription(indent: nextIndent))
-            """
-
-        case .ternary(let condition, let trueExpr, let falseExpr):
-            return """
-            \(indent)Ternary
-            \(indent)Condition:
-            \(condition.debugDescription(indent: nextIndent))
-            \(indent)True:
-            \(trueExpr.debugDescription(indent: nextIndent))
-            \(indent)False:
-            \(falseExpr.debugDescription(indent: nextIndent))
-            """
         }
     }
 }
