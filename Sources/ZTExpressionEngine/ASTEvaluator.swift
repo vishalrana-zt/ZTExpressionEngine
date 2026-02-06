@@ -70,10 +70,10 @@ public struct ASTEvaluator {
             case .divide:
                 return try toDouble(left) / toDouble(right)
 
-            case .and:
+            case .and, .logicalAnd:
                 return try toBool(left) && toBool(right)
 
-            case .or:
+            case .or, .logicalOr:
                 return try toBool(left) || toBool(right)
 
             case .equal:
