@@ -1,4 +1,4 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 5.9
 
 import PackageDescription
 
@@ -17,12 +17,16 @@ let package = Package(
     targets: [
         .target(
             name: "ZTExpressionEngine",
-            path: "Sources/ZTExpressionEngine"
+	    resources: [
+                .process("Sources/ZTExpressionEngine")
+            ]
         ),
         .testTarget(
             name: "ZTExpressionEngineTests",
             dependencies: ["ZTExpressionEngine"],
-            path: "Tests/ZTExpressionEngineTests"
+	    resources: [
+                .process("Tests/ZTExpressionEngineTests")
+            ]
         )
     ]
 )
