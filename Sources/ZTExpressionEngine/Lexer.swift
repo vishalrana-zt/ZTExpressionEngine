@@ -17,7 +17,13 @@ final class Lexer {
 
         let c = chars[index]
 
-        if c.isNumber { return readNumber() }
+        if c.isNumber {
+            if let next = peek(), next.isLetter {
+                return readIdentifier()
+            }
+            return readNumber()
+        }
+
         if c == "'" || c == "\"" { return readString() }
         if isIdentifierStart(c)  { return readIdentifier() }
 
@@ -151,5 +157,11 @@ final class Lexer {
             || c == "-"
             || c == "?"
     }
+    
+    private func peek() -> Character? {
+        guard index + 1 < chars.count else { return nil }
+        return chars[index + 1]
+    }
+
 }
 
