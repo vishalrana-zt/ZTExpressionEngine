@@ -77,3 +77,56 @@ public struct ASTEvaluator {
     }
 }
 
+
+// MARK: - AST Debug Printer
+
+extension ASTNode {
+
+    func debugDescription(indent: String = "") -> String {
+        let nextIndent = indent + "  "
+
+        switch self {
+
+        case .number(let v):
+            return "\(indent)Number(\(v))"
+
+        case .string(let v):
+            return "\(indent)String(\"\(v)\")"
+
+        case .variable(let name):
+            return "\(indent)Variable(\(name))"
+
+        case .list(let items):
+            var result = "\(indent)List[\n"
+            for item in items {
+                result += item.debugDescription(indent: nextIndent) + "\n"
+            }
+            result += "\(indent)]"
+            return result
+
+        case .unary(let op, let expr):
+            return """
+            \(indent)Unary(\(op))
+            \(expr.debugDescription(indent: nextIndent))
+            """
+
+        case .binary(let op, let left, let right):
+            return """
+            \(indent)Binary(\(op))
+            \(left.debugDescription(indent: nextIndent))
+            \(right.debugDescription(indent: nextIndent))
+            """
+
+        case .ternary(let condition, let trueExpr, let falseExpr):
+            return """
+            \(indent)Ternary
+            \(indent)Condition:
+            \(condition.debugDescription(indent: nextIndent))
+            \(indent)True:
+            \(trueExpr.debugDescription(indent: nextIndent))
+            \(indent)False:
+            \(falseExpr.debugDescription(indent: nextIndent))
+            """
+        }
+    }
+}
