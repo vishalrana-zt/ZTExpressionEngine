@@ -11,3 +11,16 @@ func toDouble(_ value: Any) throws -> Double {
     throw RuleError.typeMismatch(expected: "Number", got: value)
 }
 
+public func normalizeVariables(_ vars: [String: Any]) -> [String: Any] {
+    var normalized: [String: Any] = [:]
+
+    for (key, value) in vars {
+        if let s = value as? String, let d = Double(s) {
+            normalized[key] = d
+        } else {
+            normalized[key] = value
+        }
+    }
+
+    return normalized
+}
