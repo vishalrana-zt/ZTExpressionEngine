@@ -6,6 +6,10 @@ public struct ASTEvaluator {
     ) throws -> Any {
 
         let ast = try Parser(expression).parse()
+        #if DEBUG
+        print("=== AST DEBUG ===")
+        print(ast.debugDescription())
+        #endif
         return try eval(ast, vars: vars)
     }
 
