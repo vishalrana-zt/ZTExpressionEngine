@@ -17,16 +17,10 @@ let package = Package(
     targets: [
         .target(
             name: "ZTExpressionEngine",
-	    resources: [
-                .process("Sources/ZTExpressionEngine")
-            ]
         ),
         .testTarget(
             name: "ZTExpressionEngineTests",
-            dependencies: ["ZTExpressionEngine"],
-	    resources: [
-                .process("Tests/ZTExpressionEngineTests")
-            ]
+            dependencies: ["ZTExpressionEngine"]
         )
     ]
 )
