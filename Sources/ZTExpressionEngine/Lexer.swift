@@ -31,6 +31,14 @@ final class Lexer {
         case "[": return .leftBracket
         case "]": return .rightBracket
         case ",": return .comma
+        case "&":
+            if match("&") { return .logicalAnd }
+            return .eof
+            
+        case "|":
+            if match("|") { return .logicalOr }
+            return .eof  
+
         case "=":
             if match("=") { return .equal }
             return .equal

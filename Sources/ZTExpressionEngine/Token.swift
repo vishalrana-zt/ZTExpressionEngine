@@ -14,5 +14,8 @@ public enum Token: Equatable {
     case leftBracket, rightBracket
     case comma
     case eof
+    case logicalAnd   // &&
+    case logicalOr    // ||
+
 }
 

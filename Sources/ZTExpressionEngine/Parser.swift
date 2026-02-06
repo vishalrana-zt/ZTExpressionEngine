@@ -26,8 +26,8 @@ final class Parser {
 
     private func parseOr() throws -> ASTNode {
         var node = try parseAnd()
-        while current == .or {
-            let op = current
+        while current == .or || current == .logicalOr {
+            let op = current == .logicalOr ? .or : current
             try consume()
             node = .binary(op: op, left: node, right: try parseAnd())
         }
@@ -36,8 +36,8 @@ final class Parser {
 
     private func parseAnd() throws -> ASTNode {
         var node = try parseComparison()
-        while current == .and {
-            let op = current
+        while current == .and || current == .logicalAnd {
+            let op = current == .logicalAnd ? .and : current
             try consume()
             node = .binary(op: op, left: node, right: try parseComparison())
         }
