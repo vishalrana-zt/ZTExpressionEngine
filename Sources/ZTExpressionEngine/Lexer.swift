@@ -159,6 +159,7 @@ final class Lexer {
             || c == "-"
             || c == "?"
             || c == "%"
+            || c == " "
     }
     
     private func peek() -> Character? {
