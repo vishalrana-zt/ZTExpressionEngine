@@ -120,7 +120,7 @@ public struct ASTEvaluator {
 
         var result = expression
 
-        // Sort longest first to avoid partial replacements
+        // Sort longest first to prevent partial collisions
         let keys = vars.keys.sorted { $0.count > $1.count }
 
         for key in keys {
@@ -128,20 +128,11 @@ public struct ASTEvaluator {
             // Skip if already wrapped
             if result.contains("(\(key))") { continue }
 
-            // Escape special regex characters
-            let escapedKey = NSRegularExpression.escapedPattern(for: key)
-
-            // Match whole occurrences only
-            let pattern = "(?<!\\()\\b\(escapedKey)\\b(?!\\))"
-
-            if let regex = try? NSRegularExpression(pattern: pattern) {
-                result = regex.stringByReplacingMatches(
-                    in: result,
-                    options: [],
-                    range: NSRange(result.startIndex..., in: result),
-                    withTemplate: "(\(key))"
-                )
-            }
+            // Replace plain occurrences only
+            result = result.replacingOccurrences(
+                of: key,
+                with: "(\(key))"
+            )
         }
 
         return result
