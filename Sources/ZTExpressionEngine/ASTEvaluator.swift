@@ -120,15 +120,16 @@ public struct ASTEvaluator {
 
         var result = expression
 
-        // Sort longest first to prevent partial collisions
-        let keys = vars.keys.sorted { $0.count > $1.count }
+        // Only variables that contain spaces
+        let keysWithSpaces = vars.keys
+            .filter { $0.contains(" ") }
+            .sorted { $0.count > $1.count }
 
-        for key in keys {
+        for key in keysWithSpaces {
 
             // Skip if already wrapped
             if result.contains("(\(key))") { continue }
 
-            // Replace plain occurrences only
             result = result.replacingOccurrences(
                 of: key,
                 with: "(\(key))"
