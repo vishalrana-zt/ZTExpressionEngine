@@ -6,8 +6,19 @@ func toBool(_ value: Any) throws -> Bool {
 }
 
 func toDouble(_ value: Any) throws -> Double {
+
     if let d = value as? Double { return d }
     if let i = value as? Int { return Double(i) }
+
+    if let s = value as? String {
+        if s.trimmingCharacters(in: .whitespaces).isEmpty {
+            return 0.0   // treat empty as zero
+        }
+        if let d = Double(s) {
+            return d
+        }
+    }
+
     throw RuleError.typeMismatch(expected: "Number", got: value)
 }
 
