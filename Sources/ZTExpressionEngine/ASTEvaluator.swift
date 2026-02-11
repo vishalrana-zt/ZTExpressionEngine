@@ -1,3 +1,5 @@
+import Foundation
+
 public struct ASTEvaluator {
 
     public static func evaluate(
@@ -66,6 +68,9 @@ public struct ASTEvaluator {
 
             case .multiply:
                 return try toDouble(left) * toDouble(right)
+                
+            case .power:  
+                return pow(try toDouble(left), try toDouble(right))
 
             case .divide:
                 return try toDouble(left) / toDouble(right)

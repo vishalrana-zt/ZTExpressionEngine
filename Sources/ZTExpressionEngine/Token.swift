@@ -61,6 +61,8 @@ public enum Token: Equatable, CustomStringConvertible {
     // MARK: - End
 
     case eof
+    case power   // **
+
 
     // MARK: - Debug / Description
 
@@ -75,6 +77,7 @@ public enum Token: Equatable, CustomStringConvertible {
         case .minus: return "-"
         case .multiply: return "*"
         case .divide: return "/"
+        case .power: return "**"
 
         case .and: return "AND"
         case .or: return "OR"

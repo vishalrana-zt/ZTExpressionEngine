@@ -24,3 +24,9 @@ public func normalizeVariables(_ vars: [String: Any]) -> [String: Any] {
 
     return normalized
 }
+
+extension String {
+    func normalizedRuleString() -> String {
+        self.replacingOccurrences(of: "''", with: "'")
+    }
+}

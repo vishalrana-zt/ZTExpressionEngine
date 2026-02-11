@@ -32,7 +32,6 @@ final class Lexer {
         switch c {
         case "+": return .plus
         case "-": return .minus
-        case "*": return .multiply
         case "/": return .divide
         case "?": return .question
         case ":": return .colon
@@ -70,6 +69,9 @@ final class Lexer {
         case "<":
             if match("=") { return .lessEqual }
             return .less
+        case "*":
+            if match("*") { return .power }
+            return .multiply
         default:
             return .eof
         }
@@ -156,6 +158,8 @@ final class Lexer {
             || c == "_"
             || c == "-"
             || c == "?"
+            || c == "%"
+            || c == " "
     }
     
     private func peek() -> Character? {
