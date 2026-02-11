@@ -117,18 +117,34 @@ final class Parser {
     // MARK: - Multiplicative (* /)
 
     private func parseMultiplicative() throws -> ASTNode {
-        var node = try parseUnary()
+        var node = try parsePower()
 
         while current == .multiply || current == .divide {
             let op = current
             try consume()
-            let right = try parseUnary()
+            let right = try parsePower()
             node = .binary(op: op, left: node, right: right)
         }
+
         return node
     }
 
-    // MARK: - Unary (! -)
+    // MARK: - Power (right associative)
+
+    private func parsePower() throws -> ASTNode {
+        var node = try parseUnary()
+
+        if current == .power {
+            let op = current
+            try consume()
+            let right = try parsePower()
+            node = .binary(op: op, left: node, right: right)
+        }
+
+        return node
+    }
+
+    // MARK: - Unary
 
     private func parseUnary() throws -> ASTNode {
         if current == .not || current == .minus {
@@ -170,8 +186,6 @@ final class Parser {
             throw RuleError.unexpectedToken(current)
         }
     }
-
-    // MARK: - List [a, b, c]
 
     private func parseList() throws -> ASTNode {
         try expect(.leftBracket)

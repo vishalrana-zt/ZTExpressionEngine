@@ -2,6 +2,15 @@ import Foundation
 
 func toBool(_ value: Any) throws -> Bool {
     if let b = value as? Bool { return b }
+    if let n = value as? Double { return n != 0 }
+
+    if let s = value as? String {
+        let lower = s.lowercased()
+        if lower == "true" { return true }
+        if lower == "false" { return false }
+        if lower.isEmpty { return false }
+    }
+
     throw RuleError.typeMismatch(expected: "Bool", got: value)
 }
 

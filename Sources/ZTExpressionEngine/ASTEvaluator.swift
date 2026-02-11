@@ -1,19 +1,15 @@
 import Foundation
 
+import Foundation
+
 public struct ASTEvaluator {
 
     public static func evaluate(
         _ expression: String,
         vars: [String: Any]
     ) throws -> Any {
-
-        let processed = autoWrapVariables(expression, vars: vars)
-
-        #if DEBUG
-        debugPrint("PREPROCESSED:", processed)
-        #endif
-
-        let ast = try Parser(processed).parse()
+        
+        let ast = try Parser(expression).parse()
 
         #if DEBUG
         debugPrint("=== AST DEBUG ===")
@@ -44,12 +40,33 @@ public struct ASTEvaluator {
             return try items.map { try eval($0, vars: vars) }
 
         case .unary(let op, let expr):
-            let v = try eval(expr, vars: vars)
-            if op == .not { return try !toBool(v) }
-            if op == .minus { return try -toDouble(v) }
-            throw RuleError.invalidOperator("\(op)")
+            let value = try eval(expr, vars: vars)
+
+            switch op {
+            case .not:
+                return try !toBool(value)
+            case .minus:
+                return try -toDouble(value)
+            default:
+                throw RuleError.invalidOperator("\(op)")
+            }
 
         case .binary(let op, let l, let r):
+
+            // Short-circuit AND
+            if op == .and || op == .logicalAnd {
+                let left = try toBool(eval(l, vars: vars))
+                if !left { return false }
+                return try toBool(eval(r, vars: vars))
+            }
+
+            // Short-circuit OR
+            if op == .or || op == .logicalOr {
+                let left = try toBool(eval(l, vars: vars))
+                if left { return true }
+                return try toBool(eval(r, vars: vars))
+            }
+
             let left = try eval(l, vars: vars)
 
             if op == .in || op == .notIn {
@@ -80,13 +97,9 @@ public struct ASTEvaluator {
                 return pow(try toDouble(left), try toDouble(right))
 
             case .divide:
-                return try toDouble(left) / toDouble(right)
-
-            case .and, .logicalAnd:
-                return try toBool(left) && toBool(right)
-
-            case .or, .logicalOr:
-                return try toBool(left) || toBool(right)
+                let divisor = try toDouble(right)
+                if divisor == 0 { throw RuleError.divisionByZero }
+                return try toDouble(left) / divisor
 
             case .equal:
                 return String(describing: left) == String(describing: right)
@@ -111,31 +124,5 @@ public struct ASTEvaluator {
                 ? eval(t, vars: vars)
                 : eval(f, vars: vars)
         }
-    }
-    
-    private static func autoWrapVariables(
-        _ expression: String,
-        vars: [String: Any]
-    ) -> String {
-
-        var result = expression
-
-        // Only variables that contain spaces
-        let keysWithSpaces = vars.keys
-            .filter { $0.contains(" ") }
-            .sorted { $0.count > $1.count }
-
-        for key in keysWithSpaces {
-
-            // Skip if already wrapped
-            if result.contains("(\(key))") { continue }
-
-            result = result.replacingOccurrences(
-                of: key,
-                with: "(\(key))"
-            )
-        }
-
-        return result
     }
 }

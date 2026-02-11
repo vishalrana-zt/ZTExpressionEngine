@@ -29,6 +29,7 @@ public enum Token: Equatable, CustomStringConvertible {
     case notEqual         // !=
     case strictEqual      // ===
     case strictNotEqual   // !==
+    case power   // **
 
     // MARK: - Comparison
 
@@ -61,7 +62,6 @@ public enum Token: Equatable, CustomStringConvertible {
     // MARK: - End
 
     case eof
-    case power   // **
 
 
     // MARK: - Debug / Description

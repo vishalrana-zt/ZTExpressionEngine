@@ -33,8 +33,14 @@ final class Lexer {
         case "+": return .plus
         case "-": return .minus
         case "/": return .divide
+
+        case "*":
+            if match("*") { return .power }
+            return .multiply
+
         case "?": return .question
         case ":": return .colon
+
         case "(": return .leftParen
         case ")": return .rightParen
         case "[": return .leftBracket
@@ -43,15 +49,15 @@ final class Lexer {
 
         case "=":
             if match("=") {
-                if match("=") { return .strictEqual }   // ===
-                return .equal                           // ==
+                if match("=") { return .strictEqual }
+                return .equal
             }
             return .equal
 
         case "!":
             if match("=") {
-                if match("=") { return .strictNotEqual } // !==
-                return .notEqual                          // !=
+                if match("=") { return .strictNotEqual }
+                return .notEqual
             }
             return .not
 
@@ -66,26 +72,25 @@ final class Lexer {
         case ">":
             if match("=") { return .greaterEqual }
             return .greater
+
         case "<":
             if match("=") { return .lessEqual }
             return .less
-        case "*":
-            if match("*") { return .power }
-            return .multiply
+
         default:
             return .eof
         }
     }
 
-    // MARK: - Readers
+    // MARK: Readers
 
     private func readNumber() -> Token {
         let start = index
-        while index < chars.count && (chars[index].isNumber || chars[index] == ".") {
+        while index < chars.count &&
+              (chars[index].isNumber || chars[index] == ".") {
             index += 1
         }
-        let value = Double(String(chars[start..<index])) ?? 0
-        return .number(value)
+        return .number(Double(String(chars[start..<index])) ?? 0)
     }
 
     private func readString() -> Token {
@@ -98,39 +103,48 @@ final class Lexer {
         }
 
         let value = String(chars[start..<index])
-        index += 1
+        if index < chars.count { index += 1 }
         return .string(value)
     }
 
     private func readIdentifier() -> Token {
+
         let start = index
         var hasLetter = false
 
         while index < chars.count && isIdentifierChar(chars[index]) {
-            if chars[index].isLetter {
-                hasLetter = true
-            }
+            if chars[index].isLetter { hasLetter = true }
             index += 1
         }
 
-        let word = String(chars[start..<index])
+        let raw = String(chars[start..<index])
+        let word = raw.trimmingCharacters(in: .whitespaces)
+        let upper = word.uppercased()
 
-        // numeric-only → number
-        if !hasLetter, let num = Double(word) {
-            return .number(num)
+        if upper == "NOT" {
+            let saved = index
+            skipWhitespace()
+            if let next = peekWord()?.uppercased(), next == "IN" {
+                _ = readIdentifier()
+                return .notIn
+            }
+            index = saved
+            return .not
         }
 
-        switch word.uppercased() {
+        switch upper {
         case "AND": return .and
         case "OR": return .or
-        case "NOT": return .not
         case "IN": return .in
         default:
+            if !hasLetter, let n = Double(word) {
+                return .number(n)
+            }
             return .identifier(word)
         }
     }
 
-    // MARK: - Helpers
+    // MARK: Helpers
 
     private func skipWhitespace() {
         while index < chars.count && chars[index].isWhitespace {
@@ -138,12 +152,28 @@ final class Lexer {
         }
     }
 
-    private func match(_ expected: Character) -> Bool {
-        guard index < chars.count, chars[index] == expected else {
-            return false
-        }
+    private func match(_ c: Character) -> Bool {
+        guard index < chars.count, chars[index] == c else { return false }
         index += 1
         return true
+    }
+
+    private func peek() -> Character? {
+        guard index + 1 < chars.count else { return nil }
+        return chars[index + 1]
+    }
+
+    private func peekWord() -> String? {
+        var temp = index
+        while temp < chars.count && chars[temp].isWhitespace {
+            temp += 1
+        }
+        let start = temp
+        while temp < chars.count && isIdentifierChar(chars[temp]) {
+            temp += 1
+        }
+        guard start < temp else { return nil }
+        return String(chars[start..<temp])
     }
 
     private func isIdentifierStart(_ c: Character) -> Bool {
@@ -159,12 +189,6 @@ final class Lexer {
             || c == "-"
             || c == "?"
             || c == "%"
+            || c == " "
     }
-    
-    private func peek() -> Character? {
-        guard index + 1 < chars.count else { return nil }
-        return chars[index + 1]
-    }
-
 }
-
