@@ -6,8 +6,8 @@ public struct ASTEvaluator {
         _ expression: String,
         vars: [String: Any]
     ) throws -> Any {
-
-        let ast = try Parser(expression).parse()
+        let processedExpression = autoWrapVariables(expression, vars: vars)
+        let ast = try Parser(processedExpression).parse()
         #if DEBUG
         print("=== AST DEBUG ===")
         print(ast.debugDescription())
@@ -104,5 +104,39 @@ public struct ASTEvaluator {
                 ? eval(t, vars: vars)
                 : eval(f, vars: vars)
         }
+    }
+    
+    private static func autoWrapVariables(
+        _ expression: String,
+        vars: [String: Any]
+    ) -> String {
+
+        var result = expression
+
+        // Sort longest first to avoid partial replacements
+        let keys = vars.keys.sorted { $0.count > $1.count }
+
+        for key in keys {
+
+            // Skip if already wrapped
+            if result.contains("(\(key))") { continue }
+
+            // Escape special regex characters
+            let escapedKey = NSRegularExpression.escapedPattern(for: key)
+
+            // Match whole occurrences only
+            let pattern = "(?<!\\()\\b\(escapedKey)\\b(?!\\))"
+
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                result = regex.stringByReplacingMatches(
+                    in: result,
+                    options: [],
+                    range: NSRange(result.startIndex..., in: result),
+                    withTemplate: "(\(key))"
+                )
+            }
+        }
+
+        return result
     }
 }
