@@ -6,11 +6,18 @@ public struct ASTEvaluator {
         _ expression: String,
         vars: [String: Any]
     ) throws -> Any {
-        let processedExpression = autoWrapVariables(expression, vars: vars)
-        let ast = try Parser(processedExpression).parse()
+
+        let processed = autoWrapVariables(expression, vars: vars)
+
         #if DEBUG
-        print("=== AST DEBUG ===")
-        print(ast.debugDescription())
+        debugPrint("PREPROCESSED:", processed)
+        #endif
+
+        let ast = try Parser(processed).parse()
+
+        #if DEBUG
+        debugPrint("=== AST DEBUG ===")
+        debugPrint(ast.debugDescription())
         #endif
         return try eval(ast, vars: vars)
     }
