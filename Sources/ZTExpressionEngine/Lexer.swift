@@ -27,12 +27,28 @@ final class Lexer {
         if c.isNumber {
 
             var tempIndex = index
-            var hasLetter = false
+            var isIdentifier = false
 
             while tempIndex < chars.count {
                 let ch = chars[tempIndex]
 
-                if ch.isLetter { hasLetter = true }
+                // If we see % followed by letter → unit label
+                if ch == "%" {
+                    var lookahead = tempIndex + 1
+                    while lookahead < chars.count && chars[lookahead].isWhitespace {
+                        lookahead += 1
+                    }
+
+                    if lookahead < chars.count && chars[lookahead].isLetter {
+                        isIdentifier = true
+                        break
+                    }
+                }
+
+                if ch.isLetter {
+                    isIdentifier = true
+                    break
+                }
 
                 if ch.isWhitespace ||
                    ch == "+" || ch == "-" || ch == "*" || ch == "/" ||
@@ -47,7 +63,7 @@ final class Lexer {
                 tempIndex += 1
             }
 
-            if hasLetter {
+            if isIdentifier {
                 let token = readIdentifier()
                 lastToken = token
                 return token

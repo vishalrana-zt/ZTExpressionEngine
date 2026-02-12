@@ -215,20 +215,22 @@ final class ZTExpressionEngineTests: XCTestCase {
 
     // MARK: - PSI Formula
 
+  
     func testPSIFormula() throws {
         let result = try ZTExpressionEngine.evaluate(
             """
             29.84 * (Discharge Coefficient) *
             ((Nozzle Diameter) ** 2) *
-            ((100% PSI) ** (1/2))
+            ((150% PSI) ** (1/2))
             """,
             variables: [
-                "Discharge Coefficient": 1.0,
+                "Discharge Coefficient": 3.0,
                 "Nozzle Diameter": 2.0,
-                "100% PSI": 4.0
+                "150% PSI": 5.0
             ]
         ) as? Double
 
+        debugPrint("PSI-Result:\(String(describing: result))")
         XCTAssertNotNil(result)
     }
 
