@@ -118,12 +118,12 @@ final class Parser {
         return node
     }
 
-    // MARK: - Multiplicative (* /)
+    // MARK: - Multiplicative (* / %)
 
     private func parseMultiplicative() throws -> ASTNode {
         var node = try parsePower()
 
-        while current == .multiply || current == .divide {
+        while current == .multiply || current == .divide || current == .modulus {
             let op = current
             try consume()
             let right = try parsePower()

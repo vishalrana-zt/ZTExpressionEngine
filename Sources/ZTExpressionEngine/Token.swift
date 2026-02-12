@@ -14,6 +14,7 @@ public enum Token: Equatable, CustomStringConvertible {
     case minus           // -
     case multiply        // *
     case divide          // /
+    case modulus         // %
 
     // MARK: - Logical
 
@@ -78,6 +79,7 @@ public enum Token: Equatable, CustomStringConvertible {
         case .multiply: return "*"
         case .divide: return "/"
         case .power: return "**"
+        case .modulus: return "%"
 
         case .and: return "AND"
         case .or: return "OR"

@@ -7,7 +7,6 @@ public enum ZTExpressionEngine {
         _ expression: String,
         variables: [String: Any]
     ) throws -> Any {
-        let normalizedVars = normalizeVariables(variables)
         return try ASTEvaluator.evaluate(expression.normalizedRuleString(), vars: variables)
     }
 }

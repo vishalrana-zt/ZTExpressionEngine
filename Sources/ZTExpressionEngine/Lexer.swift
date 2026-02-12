@@ -2,6 +2,7 @@ import Foundation
 
 final class Lexer {
 
+    private var lastToken: Token = .eof
     private let chars: [Character]
     private var index = 0
 
@@ -22,18 +23,16 @@ final class Lexer {
             return .colon
         }
 
+        // ----- Number OR identifier starting with number
         if c.isNumber {
 
-            // Look ahead to decide if it's a pure number or identifier
             var tempIndex = index
             var hasLetter = false
-            var hasPercent = false
 
             while tempIndex < chars.count {
                 let ch = chars[tempIndex]
 
                 if ch.isLetter { hasLetter = true }
-                if ch == "%" { hasPercent = true }
 
                 if ch.isWhitespace ||
                    ch == "+" || ch == "-" || ch == "*" || ch == "/" ||
@@ -48,42 +47,111 @@ final class Lexer {
                 tempIndex += 1
             }
 
-            if hasLetter || hasPercent {
-                return readIdentifier()
+            if hasLetter {
+                let token = readIdentifier()
+                lastToken = token
+                return token
             } else {
-                return readNumber()
+                let token = readNumber()
+                lastToken = token
+                return token
             }
         }
 
-
         // ----- String
         if c == "'" || c == "\"" {
-            return readString()
+            let token = readString()
+            lastToken = token
+            return token
         }
 
-        // ----- Identifier start
-        if c.isLetter || c == "%" {
-            return readIdentifier()
+        // ----- Identifier start (IMPORTANT: % removed from here)
+        if c.isLetter {
+            let token = readIdentifier()
+            lastToken = token
+            return token
         }
 
+        // ----- Modulus or identifier containing %
+        if c == "%" {
+
+            var lookahead = index + 1
+            while lookahead < chars.count && chars[lookahead].isWhitespace {
+                lookahead += 1
+            }
+
+            let nextStartsValue =
+                lookahead < chars.count &&
+                (chars[lookahead].isNumber || chars[lookahead].isLetter || chars[lookahead] == "(")
+
+            let prevIsValue: Bool = {
+                switch lastToken {
+                case .number(_), .identifier(_), .rightParen, .rightBracket:
+                    return true
+                default:
+                    return false
+                }
+            }()
+
+            // Treat as modulus operator
+            if prevIsValue && nextStartsValue {
+                index += 1
+                lastToken = .modulus
+                return .modulus
+            }
+
+            // Otherwise part of identifier like CG%Value or 100% PSI
+            let token = readIdentifier()
+            lastToken = token
+            return token
+        }
+
+        // consume single char operators
         index += 1
 
         switch c {
-        case "+": return .plus
-        case "-": return .minus
-        case "/": return .divide
+
+        case "+":
+            lastToken = .plus
+            return .plus
+
+        case "-":
+            lastToken = .minus
+            return .minus
+
+        case "/":
+            lastToken = .divide
+            return .divide
 
         case "*":
-            if match("*") { return .power }
+            if match("*") {
+                lastToken = .power
+                return .power
+            }
+            lastToken = .multiply
             return .multiply
 
-        case "?": return .question
+        case "?":
+            return .question
 
-        case "(": return .leftParen
-        case ")": return .rightParen
-        case "[": return .leftBracket
-        case "]": return .rightBracket
-        case ",": return .comma
+        case "(":
+            lastToken = .leftParen
+            return .leftParen
+
+        case ")":
+            lastToken = .rightParen
+            return .rightParen
+
+        case "[":
+            lastToken = .leftBracket
+            return .leftBracket
+
+        case "]":
+            lastToken = .rightBracket
+            return .rightBracket
+
+        case ",":
+            return .comma
 
         case "=":
             if match("=") {
@@ -128,7 +196,9 @@ final class Lexer {
               (chars[index].isNumber || chars[index] == ".") {
             index += 1
         }
-        return .number(Double(String(chars[start..<index])) ?? 0)
+        let token = Token.number(Double(String(chars[start..<index])) ?? 0)
+        lastToken = token
+        return token
     }
 
     private func readString() -> Token {
@@ -153,7 +223,19 @@ final class Lexer {
 
             let c = chars[index]
 
-            // Stop at structural/operator characters ONLY
+            if c == "%" {
+
+                var lookahead = index + 1
+                while lookahead < chars.count && chars[lookahead].isWhitespace {
+                    lookahead += 1
+                }
+
+                if lookahead < chars.count &&
+                    (chars[lookahead].isNumber || chars[lookahead] == "(") {
+                    break   // stop identifier BEFORE %
+                }
+            }
+
             if c.isWhitespace ||
                c == "+" || c == "-" || c == "*" ||
                c == "(" || c == ")" ||
@@ -192,7 +274,9 @@ final class Lexer {
             return .not
         }
 
-        return .identifier(word)
+        let token = Token.identifier(word)
+        lastToken = token
+        return token
     }
 
     // MARK: Helpers

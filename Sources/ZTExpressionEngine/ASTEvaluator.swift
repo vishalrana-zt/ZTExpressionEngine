@@ -9,13 +9,14 @@ public struct ASTEvaluator {
         vars: [String: Any]
     ) throws -> Any {
         
+        let normalizedVars = normalizeVariables(vars)
         let ast = try Parser(expression).parse()
 
         #if DEBUG
         debugPrint("=== AST DEBUG ===")
         debugPrint(ast.debugDescription())
         #endif
-        return try eval(ast, vars: vars)
+        return try eval(ast, vars: normalizedVars)
     }
 
     private static func eval(_ node: ASTNode, vars: [String: Any]) throws -> Any {
@@ -24,16 +25,36 @@ public struct ASTEvaluator {
 
         case .number(let v): return v
         case .string(let v): return v
-
         case .variable(let name):
+
             if let value = vars[name] {
                 return value
             }
+
             if let value = vars.first(where: {
-                $0.key.lowercased() == name.lowercased()
+                $0.key.compare(name, options: .caseInsensitive) == .orderedSame
             })?.value {
                 return value
             }
+
+            if let value = vars.first(where: {
+                $0.key.lowercased().hasSuffix(name.lowercased())
+            })?.value {
+                return value
+            }
+
+            let normalize: (String) -> String = {
+                $0.replacingOccurrences(of: " ", with: "")
+                  .replacingOccurrences(of: "%", with: "")
+                  .lowercased()
+            }
+
+            let target = normalize(name)
+
+            if let value = vars.first(where: { normalize($0.key) == target })?.value {
+                return value
+            }
+
             throw RuleError.missingVariable(name)
 
         case .list(let items):
@@ -100,6 +121,11 @@ public struct ASTEvaluator {
                 let divisor = try toDouble(right)
                 if divisor == 0 { throw RuleError.divisionByZero }
                 return try toDouble(left) / divisor
+                
+            case .modulus:
+                let divisor = try toDouble(right)
+                if divisor == 0 { throw RuleError.divisionByZero }
+                return try toDouble(left).truncatingRemainder(dividingBy: divisor)
 
             case .equal:
                 return String(describing: left) == String(describing: right)

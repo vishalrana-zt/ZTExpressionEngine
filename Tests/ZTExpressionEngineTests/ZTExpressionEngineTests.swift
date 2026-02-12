@@ -63,6 +63,50 @@ final class ZTExpressionEngineTests: XCTestCase {
 
         XCTAssertEqual(result, 9.0)
     }
+    
+    func testModulusWithVariable() throws {
+        let result = try ZTExpressionEngine.evaluate(
+            "Score % 5",
+            variables: [
+                "Score": 17.0
+            ]
+        ) as? Double
+
+        XCTAssertEqual(result, 2)
+    }
+    
+    func testModulusWithSpecialCharacterVariable() throws {
+        let result = try ZTExpressionEngine.evaluate(
+            "CG%Value % 4",
+            variables: [
+                "CG%Value": 10.0
+            ]
+        ) as? Double
+
+        XCTAssertEqual(result, 2)
+    }
+
+    func testModulusInsideTernary() throws {
+        let result = try ZTExpressionEngine.evaluate(
+            "Age % 2 == 0 ? 'even' : 'odd'",
+            variables: [
+                "Age": 21.0
+            ]
+        ) as? String
+
+        XCTAssertEqual(result, "odd")
+    }
+    
+    func testModulusDivisionByZeroThrows() {
+        XCTAssertThrowsError(
+            try ZTExpressionEngine.evaluate(
+                "10 % 0",
+                variables: [:]
+            )
+        )
+    }
+
+
 
     // MARK: - IN Operator
 
@@ -207,4 +251,52 @@ final class ZTExpressionEngineTests: XCTestCase {
             )
         )
     }
+    
+    // MARK: - Modulus Robustness
+
+    func testModulusSpacingVariants() throws {
+
+        let vars: [String: Any] = [
+            "Flow Rate": 10.0
+        ]
+
+        let r1 = try ZTExpressionEngine.evaluate("Flow Rate % 2", variables: vars) as? Double
+        let r2 = try ZTExpressionEngine.evaluate("Flow Rate%2", variables: vars) as? Double
+        let r3 = try ZTExpressionEngine.evaluate("Flow Rate %2", variables: vars) as? Double
+        let r4 = try ZTExpressionEngine.evaluate("(Flow Rate)%2", variables: vars) as? Double
+        let r5 = try ZTExpressionEngine.evaluate("(Flow Rate % 2)", variables: vars) as? Double
+
+        XCTAssertEqual(r1, 0)
+        XCTAssertEqual(r2, 0)
+        XCTAssertEqual(r3, 0)
+        XCTAssertEqual(r4, 0)
+        XCTAssertEqual(r5, 0)
+    }
+    
+    func testPercentInsideIdentifierNotOperator() throws {
+
+        let result = try ZTExpressionEngine.evaluate(
+            "CG%Value",
+            variables: [
+                "CG%Value": 25.0
+            ]
+        ) as? Double
+
+        XCTAssertEqual(result, 25.0)
+    }
+    
+    func testUnitSuffixVariableResolution() throws {
+
+        let result = try ZTExpressionEngine.evaluate(
+            "PSI + 1",
+            variables: [
+                "100% PSI": 4.0
+            ]
+        ) as? Double
+
+        XCTAssertEqual(result, 5.0)
+    }
+
+
+
 }
