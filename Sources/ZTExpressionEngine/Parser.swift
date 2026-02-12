@@ -84,20 +84,24 @@ final class Parser {
     private func parseComparison() throws -> ASTNode {
         var node = try parseAdditive()
 
-        while current == .greater
-            || current == .greaterEqual
-            || current == .less
-            || current == .lessEqual
-            || current == .in
-            || current == .notIn {
+        while true {
 
-            let op = current
-            try consume()
-            let right = try parseAdditive()
-            node = .binary(op: op, left: node, right: right)
+            switch current {
+
+            case .in, .notIn,
+                 .greater, .greaterEqual,
+                 .less, .lessEqual:
+
+                let op = current
+                try consume()
+
+                let right = try parseAdditive()
+                node = .binary(op: op, left: node, right: right)
+
+            default:
+                return node
+            }
         }
-
-        return node
     }
 
     // MARK: - Additive (+ -)
@@ -170,8 +174,15 @@ final class Parser {
             return .string(v)
 
         case .identifier(let name):
+            var fullName = name
             try consume()
-            return .variable(name)
+            
+            while case .identifier(let nextPart) = current {
+                fullName += " " + nextPart
+                try consume()
+            }
+            
+            return .variable(fullName)
 
         case .leftParen:
             try consume()

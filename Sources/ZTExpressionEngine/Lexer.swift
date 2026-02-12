@@ -17,15 +17,54 @@ final class Lexer {
 
         let c = chars[index]
 
-        if c.isNumber {
-            if let next = peek(), next.isLetter {
-                return readIdentifier()
-            }
-            return readNumber()
+        if c == ":" {
+            index += 1
+            return .colon
         }
 
-        if c == "'" || c == "\"" { return readString() }
-        if isIdentifierStart(c)  { return readIdentifier() }
+        if c.isNumber {
+
+            // Look ahead to decide if it's a pure number or identifier
+            var tempIndex = index
+            var hasLetter = false
+            var hasPercent = false
+
+            while tempIndex < chars.count {
+                let ch = chars[tempIndex]
+
+                if ch.isLetter { hasLetter = true }
+                if ch == "%" { hasPercent = true }
+
+                if ch.isWhitespace ||
+                   ch == "+" || ch == "-" || ch == "*" || ch == "/" ||
+                   ch == "(" || ch == ")" ||
+                   ch == "[" || ch == "]" ||
+                   ch == "," || ch == "?" ||
+                   ch == "=" || ch == "!" || ch == "<" || ch == ">" ||
+                   ch == "&" || ch == "|" {
+                    break
+                }
+
+                tempIndex += 1
+            }
+
+            if hasLetter || hasPercent {
+                return readIdentifier()
+            } else {
+                return readNumber()
+            }
+        }
+
+
+        // ----- String
+        if c == "'" || c == "\"" {
+            return readString()
+        }
+
+        // ----- Identifier start
+        if c.isLetter || c == "%" {
+            return readIdentifier()
+        }
 
         index += 1
 
@@ -39,7 +78,6 @@ final class Lexer {
             return .multiply
 
         case "?": return .question
-        case ":": return .colon
 
         case "(": return .leftParen
         case ")": return .rightParen
@@ -110,16 +148,38 @@ final class Lexer {
     private func readIdentifier() -> Token {
 
         let start = index
-        var hasLetter = false
 
-        while index < chars.count && isIdentifierChar(chars[index]) {
-            if chars[index].isLetter { hasLetter = true }
+        while index < chars.count {
+
+            let c = chars[index]
+
+            // Stop at structural/operator characters ONLY
+            if c.isWhitespace ||
+               c == "+" || c == "-" || c == "*" ||
+               c == "(" || c == ")" ||
+               c == "[" || c == "]" ||
+               c == "," || c == "?" ||
+               c == "=" || c == "!" || c == "<" || c == ">" ||
+               c == "&" || c == "|" {
+                break
+            }
+
             index += 1
         }
 
         let raw = String(chars[start..<index])
         let word = raw.trimmingCharacters(in: .whitespaces)
+
+        if word.isEmpty {
+            return .eof
+        }
+
         let upper = word.uppercased()
+
+        // Standalone keywords
+        if upper == "AND" { return .and }
+        if upper == "OR" { return .or }
+        if upper == "IN" { return .in }
 
         if upper == "NOT" {
             let saved = index
@@ -132,16 +192,7 @@ final class Lexer {
             return .not
         }
 
-        switch upper {
-        case "AND": return .and
-        case "OR": return .or
-        case "IN": return .in
-        default:
-            if !hasLetter, let n = Double(word) {
-                return .number(n)
-            }
-            return .identifier(word)
-        }
+        return .identifier(word)
     }
 
     // MARK: Helpers
@@ -169,11 +220,26 @@ final class Lexer {
             temp += 1
         }
         let start = temp
-        while temp < chars.count && isIdentifierChar(chars[temp]) {
+
+        while temp < chars.count {
+
+            let c = chars[temp]
+
+            if c == "+" || c == "-" || c == "*" || c == "/" ||
+               c == "(" || c == ")" ||
+               c == "[" || c == "]" ||
+               c == "," || c == "?" || c == ":" ||
+               c == "=" || c == "!" || c == "<" || c == ">" ||
+               c == "&" || c == "|" {
+                break
+            }
+
             temp += 1
         }
         guard start < temp else { return nil }
+
         return String(chars[start..<temp])
+            .trimmingCharacters(in: .whitespaces)
     }
 
     private func isIdentifierStart(_ c: Character) -> Bool {

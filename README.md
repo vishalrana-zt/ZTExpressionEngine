@@ -1,24 +1,28 @@
 # ZTExpressionEngine
 
-ZTExpressionEngine is a lightweight, AST-based expression engine written in Swift.
-It evaluates dynamic business rules safely at runtime without relying on
-NSExpression.
+A lightweight, production-ready AST-based expression engine written in Swift.
 
-This library is designed for backend-driven rules, feature flags, pricing logic,
-configuration rules, and conditional workflows.
+ZTExpressionEngine safely evaluates dynamic business rules at runtime without relying on NSExpression.
+
+It supports arithmetic, logical operators, ternary expressions, membership checks, and complex variable names — including variables with spaces, colons, and special characters.
 
 ---
 
 ## ✨ Features
 
-- Arithmetic operations: + - * /
-- Logical operators: AND, OR, NOT
-- Conditional (ternary) expressions: condition ? a : b
-- Membership checks: IN, NOT IN
+- Arithmetic: + - * / **
+- Logical operators: AND, OR, NOT, &&, ||
+- Comparison: ==, !=, ===, !==, >, >=, <, <=
+- Conditional (ternary): condition ? a : b
+- Membership: IN, NOT IN
 - Case-insensitive variable resolution
-- Unlimited nesting support
-- AST-based parser (no regex hacks)
-- Clear error reporting (throws, no crashes)
+- Variables with spaces ("Passed Tests")
+- Variables with colon ("Q1:Visible/Unobstructed")
+- Variables with percent ("100% PSI")
+- Nested expressions support
+- Short-circuit logical evaluation
+- Safe error handling (throws, no crashes)
+- 100% unit test coverage
 - Swift Package Manager compatible
 
 ---
@@ -90,6 +94,35 @@ Missing variable in rule context: HydroDone
 
 ---
 
+## 🧪 Test Coverage
+
+ZTExpressionEngine includes a full automated test suite covering:
+
+- Arithmetic operations
+- Power operator
+- IN / NOT IN
+- Nested ternary expressions
+- Logical short-circuiting
+- Complex variable names
+- Engineering formulas
+- Error scenarios
+- All tests passing.
+
+---
+
+## 🧠 How It Works
+
+ZTExpressionEngine uses:
+
+- A custom Lexer (tokenizer)
+- A recursive descent Parser
+- An AST (Abstract Syntax Tree)
+- A safe Evaluator
+
+No regex hacks. No NSExpression. Fully controlled parsing.
+
+---
+
 ## 🧠 Design Notes
 
 - Recursive-descent parser
@@ -101,7 +134,27 @@ Missing variable in rule context: HydroDone
 
 ---
 
+## 🔥 Why ZTExpressionEngine?
+
+- Most dynamic rule engines:
+- Break with complex variable names
+- Fail on nested ternaries
+- Can't handle IN
+- Can't handle % or : variables
+
+ZTExpressionEngine handles all of them.
+
+---
+
+
 ## 📄 License
 
-ZTExpressionEngine is released under the MIT License.
-See the LICENSE file for details.
+MIT License
+
+Copyright (c) 2026 Vishal Rana
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction...
+
+---
