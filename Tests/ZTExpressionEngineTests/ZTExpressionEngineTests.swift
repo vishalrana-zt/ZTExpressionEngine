@@ -233,6 +233,25 @@ final class ZTExpressionEngineTests: XCTestCase {
         debugPrint("PSI-Result:\(String(describing: result))")
         XCTAssertNotNil(result)
     }
+    
+    
+    func testPSINomalFormula() throws {
+        let result = try ZTExpressionEngine.evaluate(
+            """
+            29.84 * (Value_A) *
+            ((Value_B) ** 2) *
+            ((Value_C) ** (1/2))
+            """,
+            variables: [
+                "Value_A": 3.0,
+                "Value_B": 2.0,
+                "Value_C": 5.0
+            ]
+        ) as? Double
+
+        debugPrint("PSI-Normal-Result:\(String(describing: result))")
+        XCTAssertNotNil(result)
+    }
 
     // MARK: - Error Handling
 
